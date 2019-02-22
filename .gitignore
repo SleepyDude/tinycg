@@ -1,0 +1,6 @@
+builds
+*.user
+*.obj
+CMakeFiles
+cmake_install.cmake
+Makefile
