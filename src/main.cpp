@@ -5,6 +5,21 @@ const TGAColor white = TGAColor(255, 255, 255, 255);
 const TGAColor green = TGAColor(  0, 255,   0, 255);
 const TGAColor red   = TGAColor(255,   0,   0, 255);
 
+typedef struct Vec2i {
+    int x;
+    int y;
+    Vec2i(int x, int y) : x(x), y(y) {}
+    Vec2i operator *(float scale) {
+        return {static_cast<int>(x*scale), static_cast<int>(y*scale)};
+    }
+    Vec2i operator +(Vec2i other) {
+        return {x + other.x, y + other.y};
+    }
+    Vec2i operator -(Vec2i other) {
+        return {x - other.x, y - other.y};
+    }
+} Vec2i;
+
 void line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) {
     bool steep = false;
     if (std::abs(x0-x1) < std::abs(y0-y1)) {
@@ -36,20 +51,73 @@ void line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) {
         }
     }
 }
+
+void line(Vec2i v1, Vec2i v2, TGAImage &image, TGAColor color) {
+    int x0, x1, y0, y1;
+    x0 = v1.x; y0 = v1.y;
+    x1 = v2.x; y1 = v2.y;
+    line(x0, y0, x1, y1, image, color);
+}
+
+void triangle(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color) {
+    if (t0.y > t1.y) std::swap(t0, t1);
+    if (t1.y > t2.y) std::swap(t1, t2);
+    if (t0.y > t1.y) std::swap(t0, t1);
+    float tg1 = 0.0f;
+    float tg2 = 0.0f;
+    float tg3 = 0.0f;
+    if (t0.y != t1.y)
+        tg1 = (t1.x - t0.x)/static_cast<float>(t1.y - t0.y);
+    tg2 = (t2.x - t0.x)/static_cast<float>(t2.y - t0.y);
+
+    for (int i = t0.y; i <= t1.y; i++) {
+        float dx1 = t0.x + (i-t0.y)*tg1 + 0.5f;
+        float dx2 = t0.x + (i-t0.y)*tg2 + 0.5f;
+        if (dx1 > dx2) std::swap(dx1, dx2);
+        for (int j = static_cast<int>(dx1);
+             j <= static_cast<int>(dx2); j++ ) {
+            image.set(j, i, color);
+        }
+    }
+    if (t1.y != t2.y)
+        tg3 = (t2.x - t1.x)/static_cast<float>(t2.y - t1.y);
+    for (int i = t1.y; i <= t2.y; i++) {
+        float dx1 = t1.x + (i-t1.y)*tg3 + 0.5f;
+        float dx2 = t0.x + (i-t0.y)*tg2 + 0.5f;
+        if (dx1 > dx2) std::swap(dx1, dx2);
+        for (int j = static_cast<int>(dx1);
+             j <= static_cast<int>(dx2); j++ ) {
+            image.set(j, i, color);
+        }
+    }
+    line(t0, t1, image, color);
+    line(t1, t2, image, color);
+    line(t2, t0, image, color);
+}
+
 int main(int argc, char** argv) {
-    int width = 800;
-    int height = 800;
+    int width = 600;
+    int height = 600;
     TGAImage image(width, height, TGAImage::RGB);
+
+    //Vec2i t0[3] = {Vec2i(10, 70),   Vec2i(50, 160),  Vec2i(70, 80)};
+    Vec2i t0[3] = {Vec2i(10, 70),   Vec2i(50, 70),  Vec2i(70, 70)};
+    Vec2i t1[3] = {Vec2i(180, 50),  Vec2i(150, 1),   Vec2i(70, 180)};
+    Vec2i t2[3] = {Vec2i(180, 150), Vec2i(120, 160), Vec2i(130, 180)};
+//    triangle(t0[0], t0[1], t0[2], image, white);
+//    triangle(t1[0], t1[1], t1[2], image, white);
+//    triangle(t2[0], t2[1], t2[2], image, white);
+
     Model m;
     m.readModel("../african_head.obj");
-    std::vector<Segment2D> segments = m.getSegments(z);
-    for (auto segm : segments) {
-        int x0 = (segm.p1.x+1.)*width/2.;
-        int y0 = (segm.p1.y+1.)*height/2.;
-        int x1 = (segm.p2.x+1.)*width/2.;
-        int y1 = (segm.p2.y+1.)*height/2.;
-        line(x0, y0, x1, y1, image, white);
+    std::vector<Triangle> triangles = m.getTriangles(z);
+    for (auto tr : triangles) {
+        Vec2i t0 = Vec2i((tr.p1.x+1.)*width/2., (tr.p1.y+1.)*height/2.);
+        Vec2i t1 = Vec2i((tr.p2.x+1.)*width/2., (tr.p2.y+1.)*height/2.);
+        Vec2i t2 = Vec2i((tr.p3.x+1.)*width/2., (tr.p3.y+1.)*height/2.);
+        triangle(t0, t1, t2, image, TGAColor(rand()%255, rand()%255, rand()%255, 255));
     }
+
     image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
 	image.write_tga_file("output.tga");
 	return 0;

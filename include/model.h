@@ -20,6 +20,12 @@ typedef struct Segment2D {
     Point2D p2;
 } Segment2D;
 
+typedef struct Triangle {
+    Point2D p1;
+    Point2D p2;
+    Point2D p3;
+} Triangle;
+
 typedef struct Face {
     int f1;
     int f2;
@@ -37,6 +43,7 @@ public:
 
     void readModel(std::string filename);
     std::vector<Segment2D> getSegments(Projection p);
+    std::vector<Triangle> getTriangles(Projection p);
 
 private:
     std::vector<Point3D> m_vertexes;

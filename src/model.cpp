@@ -95,3 +95,36 @@ std::vector<Segment2D> Model::getSegments(Projection p) {
     }
     return segments;
 }
+
+std::vector<Triangle> Model::getTriangles(Projection p) {
+    std::vector<Triangle> triangles;
+    switch(p) {
+    case x : {
+        for (auto it = m_faces.begin(); it != m_faces.end(); ++it) {
+            Point3D p1 = m_vertexes[static_cast<size_t>(it->f1-1)];
+            Point3D p2 = m_vertexes[static_cast<size_t>(it->f2-1)];
+            Point3D p3 = m_vertexes[static_cast<size_t>(it->f3-1)];
+            triangles.push_back({{p1.y, p1.z}, {p2.y, p2.z}, {p3.y, p3.z}});
+        }
+        break;
+    }
+    case y : {
+        for (auto it = m_faces.begin(); it != m_faces.end(); ++it) {
+            Point3D p1 = m_vertexes[static_cast<size_t>(it->f1-1)];
+            Point3D p2 = m_vertexes[static_cast<size_t>(it->f2-1)];
+            Point3D p3 = m_vertexes[static_cast<size_t>(it->f3-1)];
+            triangles.push_back({{p1.x, p1.z}, {p2.x, p2.z}, {p3.x, p3.z}});
+        }
+        break;
+    }
+    case z : {
+        for (auto it = m_faces.begin(); it != m_faces.end(); ++it) {
+            Point3D p1 = m_vertexes[static_cast<size_t>(it->f1-1)];
+            Point3D p2 = m_vertexes[static_cast<size_t>(it->f2-1)];
+            Point3D p3 = m_vertexes[static_cast<size_t>(it->f3-1)];
+            triangles.push_back({{p1.x, p1.y}, {p2.x, p2.y}, {p3.x, p3.y}});
+        }
+    }
+    }
+    return triangles;
+}
