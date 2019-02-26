@@ -1,24 +1,10 @@
 #include "tgaimage.h"
 #include "model.h"
+#include "geometry.hpp"
 
 const TGAColor white = TGAColor(255, 255, 255, 255);
 const TGAColor green = TGAColor(  0, 255,   0, 255);
 const TGAColor red   = TGAColor(255,   0,   0, 255);
-
-typedef struct Vec2i {
-    int x;
-    int y;
-    Vec2i(int x, int y) : x(x), y(y) {}
-    Vec2i operator *(float scale) {
-        return {static_cast<int>(x*scale), static_cast<int>(y*scale)};
-    }
-    Vec2i operator +(Vec2i other) {
-        return {x + other.x, y + other.y};
-    }
-    Vec2i operator -(Vec2i other) {
-        return {x - other.x, y - other.y};
-    }
-} Vec2i;
 
 void line(int x0, int y0, int x1, int y1, TGAImage &image, TGAColor color) {
     bool steep = false;
@@ -126,17 +112,17 @@ int main(int argc, char** argv) {
 //        Vec2i t2 = Vec2i((tr.p3.x+1.)*width/2., (tr.p3.y+1.)*height/2.);
 //        triangle(t0, t1, t2, image, TGAColor(rand()%255, rand()%255, rand()%255, 255));
 //    }
-    Point3D light_dir = {0, 0, -1};
+    Vec3f light_dir = {0, 0, -1};
     for (size_t i=0; i < m.sizeFace(); i++) {
-        std::vector<int> face = m.face(i);
-        Vec2i screen_coords[3] = {{0,0},{0,0},{0,0}};
-        Point3D world_coords[3];
+        Face face = m.face(i);
+        Vec2i screen_coords[3];
+        Vec3f world_coords[3];
         for (size_t j=0; j<3; j++) {
-            Point3D v = m.getVertex(face[j]-1);
+            Vec3f v = m.getVertex(face[j]-1);
             screen_coords[j] = Vec2i((v.x+1.)*width/2., (v.y+1.)*height/2.);
             world_coords[j]  = v;
         }
-        Point3D n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
+        Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
         n.normalize();
         float intensity = n*light_dir;
         if (intensity>0) {

@@ -8,7 +8,7 @@
 
 size_t Model::sizeVert() { return m_vertexes.size(); }
 size_t Model::sizeFace() { return m_faces.size(); }
-Point3D Model::getVertex(size_t num) { return m_vertexes[num]; }
+Vec3f Model::getVertex(size_t num) { return m_vertexes[num]; }
 
 std::vector<std::string> split(const std::string& s, char delimiter)
 {
@@ -31,7 +31,7 @@ void Model::readModel(std::string filename) {
     for (std::string line; std::getline(readFile, line);) {
         std::vector<std::string> results = ::split(line, ' ');
         if (results.size() && results[0] == "v") {
-            Point3D p = {std::stof(results[1]),
+            Vec3f p = {std::stof(results[1]),
                          std::stof(results[2]),
                          std::stof(results[3])};
             m_vertexes.push_back(p);
@@ -48,87 +48,7 @@ void Model::readModel(std::string filename) {
     }
 }
 
-std::vector<Segment2D> Model::getSegments(Projection p) {
-    std::vector<Segment2D> segments;
-    switch(p) {
-    case x : {
-        for (auto it = m_faces.begin(); it != m_faces.end(); ++it) {
-            Point3D p1 = m_vertexes[static_cast<size_t>(it->f1-1)];
-            Point3D p2 = m_vertexes[static_cast<size_t>(it->f2-1)];
-            Point3D p3 = m_vertexes[static_cast<size_t>(it->f3-1)];
-            Segment2D s1 = {{p1.y, p1.z}, {p2.y, p2.z}};
-            Segment2D s2 = {{p2.y, p2.z}, {p3.y, p3.z}};
-            Segment2D s3 = {{p3.y, p3.z}, {p1.y, p1.z}};
-            segments.push_back(s1);
-            segments.push_back(s2);
-            segments.push_back(s3);
-        }
-        break;
-    }
-    case y : {
-        for (auto it = m_faces.begin(); it != m_faces.end(); ++it) {
-            Point3D p1 = m_vertexes[static_cast<size_t>(it->f1-1)];
-            Point3D p2 = m_vertexes[static_cast<size_t>(it->f2-1)];
-            Point3D p3 = m_vertexes[static_cast<size_t>(it->f3-1)];
-            Segment2D s1 = {{p1.x, p1.z}, {p2.x, p2.z}};
-            Segment2D s2 = {{p2.x, p2.z}, {p3.x, p3.z}};
-            Segment2D s3 = {{p3.x, p3.z}, {p1.x, p1.z}};
-            segments.push_back(s1);
-            segments.push_back(s2);
-            segments.push_back(s3);
-        }
-        break;
-    }
-    case z : {
-        for (auto it = m_faces.begin(); it != m_faces.end(); ++it) {
-            Point3D p1 = m_vertexes[static_cast<size_t>(it->f1-1)];
-            Point3D p2 = m_vertexes[static_cast<size_t>(it->f2-1)];
-            Point3D p3 = m_vertexes[static_cast<size_t>(it->f3-1)];
-            Segment2D s1 = {{p1.x, p1.y}, {p2.x, p2.y}};
-            Segment2D s2 = {{p2.x, p2.y}, {p3.x, p3.y}};
-            Segment2D s3 = {{p3.x, p3.y}, {p1.x, p1.y}};
-            segments.push_back(s1);
-            segments.push_back(s2);
-            segments.push_back(s3);
-        }
-    }
-    }
-    return segments;
-}
 
-std::vector<Triangle> Model::getTriangles(Projection p) {
-    std::vector<Triangle> triangles;
-    switch(p) {
-    case x : {
-        for (auto it = m_faces.begin(); it != m_faces.end(); ++it) {
-            Point3D p1 = m_vertexes[static_cast<size_t>(it->f1-1)];
-            Point3D p2 = m_vertexes[static_cast<size_t>(it->f2-1)];
-            Point3D p3 = m_vertexes[static_cast<size_t>(it->f3-1)];
-            triangles.push_back({{p1.y, p1.z}, {p2.y, p2.z}, {p3.y, p3.z}});
-        }
-        break;
-    }
-    case y : {
-        for (auto it = m_faces.begin(); it != m_faces.end(); ++it) {
-            Point3D p1 = m_vertexes[static_cast<size_t>(it->f1-1)];
-            Point3D p2 = m_vertexes[static_cast<size_t>(it->f2-1)];
-            Point3D p3 = m_vertexes[static_cast<size_t>(it->f3-1)];
-            triangles.push_back({{p1.x, p1.z}, {p2.x, p2.z}, {p3.x, p3.z}});
-        }
-        break;
-    }
-    case z : {
-        for (auto it = m_faces.begin(); it != m_faces.end(); ++it) {
-            Point3D p1 = m_vertexes[static_cast<size_t>(it->f1-1)];
-            Point3D p2 = m_vertexes[static_cast<size_t>(it->f2-1)];
-            Point3D p3 = m_vertexes[static_cast<size_t>(it->f3-1)];
-            triangles.push_back({{p1.x, p1.y}, {p2.x, p2.y}, {p3.x, p3.y}});
-        }
-    }
-    }
-    return triangles;
-}
-
-std::vector<int> Model::face(size_t i) {
-    return {m_faces[i].f1, m_faces[i].f2, m_faces[i].f3};
+Face Model::face(size_t i) {
+    return m_faces[i];
 }

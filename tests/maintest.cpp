@@ -28,7 +28,7 @@ SCENARIO( "model class can read info from obj file", "[model, obj]" ) {
                 REQUIRE(m.sizeVert() == 20);
             }
             THEN("comparison first vertex coordinates") {
-                Point3D p = m.getVertex(0);
+                Vec3f p = m.getVertex(0);
                 float x = -0.000581696f;
                 float y = -0.734665f;
                 float z = -0.623267f;
