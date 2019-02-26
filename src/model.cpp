@@ -128,3 +128,7 @@ std::vector<Triangle> Model::getTriangles(Projection p) {
     }
     return triangles;
 }
+
+std::vector<int> Model::face(size_t i) {
+    return {m_faces[i].f1, m_faces[i].f2, m_faces[i].f3};
+}

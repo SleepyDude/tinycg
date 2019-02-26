@@ -2,12 +2,32 @@
 #define MODEL_H
 
 #include <vector>
+#include <array>
 #include <string>
+#include <math.h>
 
 typedef struct Point3D {
     float x;
     float y;
     float z;
+    Point3D operator ^(Point3D other) {
+        float _x = y * other.z - z * other.y;
+        float _y = - x * other.z + z * other.x;
+        float _z = x * other.y - y * other.x;
+        return {_x, _y, _z};
+    }
+    Point3D operator -(Point3D other) {
+        return {x - other.x, y - other.y, z - other.z};
+    }
+    void normalize() {
+        float l = sqrt(x*x + y*y + z*z);
+        x /= l;
+        y /= l;
+        z /= l;
+    }
+    float operator *(Point3D other) {
+        return x * other.x + y * other.y + z * other.z;
+    }
 } Point3D;
 
 typedef struct Point2D {
@@ -44,6 +64,7 @@ public:
     void readModel(std::string filename);
     std::vector<Segment2D> getSegments(Projection p);
     std::vector<Triangle> getTriangles(Projection p);
+    std::vector<int> face(size_t i);
 
 private:
     std::vector<Point3D> m_vertexes;

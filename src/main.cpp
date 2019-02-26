@@ -110,14 +110,39 @@ int main(int argc, char** argv) {
 
     Model m;
     m.readModel("../african_head.obj");
-    std::vector<Triangle> triangles = m.getTriangles(z);
-    for (auto tr : triangles) {
-        Vec2i t0 = Vec2i((tr.p1.x+1.)*width/2., (tr.p1.y+1.)*height/2.);
-        Vec2i t1 = Vec2i((tr.p2.x+1.)*width/2., (tr.p2.y+1.)*height/2.);
-        Vec2i t2 = Vec2i((tr.p3.x+1.)*width/2., (tr.p3.y+1.)*height/2.);
-        triangle(t0, t1, t2, image, TGAColor(rand()%255, rand()%255, rand()%255, 255));
+//    for (size_t i = 0; i < m.sizeFace(); i++) {
+//        std::vector<int> f = m.face(i);
+//        Vec2i wc[3] = {{0,0}, {0,0}, {0,0}};
+//        for (size_t j = 0; j < 3; j++) {
+//            Point3D v = m.getVertex(f[j]-1);
+//            wc[j] = Vec2i((v.x+1.)*width/2., (v.y+1.)*height/2.);
+//        }
+//        triangle(wc[0], wc[1], wc[2], image, TGAColor(rand()%255, rand()%255, rand()%255, 255));
+//    }
+//    std::vector<Triangle> triangles = m.getTriangles(z);
+//    for (auto tr : triangles) {
+//        Vec2i t0 = Vec2i((tr.p1.x+1.)*width/2., (tr.p1.y+1.)*height/2.);
+//        Vec2i t1 = Vec2i((tr.p2.x+1.)*width/2., (tr.p2.y+1.)*height/2.);
+//        Vec2i t2 = Vec2i((tr.p3.x+1.)*width/2., (tr.p3.y+1.)*height/2.);
+//        triangle(t0, t1, t2, image, TGAColor(rand()%255, rand()%255, rand()%255, 255));
+//    }
+    Point3D light_dir = {0, 0, -1};
+    for (size_t i=0; i < m.sizeFace(); i++) {
+        std::vector<int> face = m.face(i);
+        Vec2i screen_coords[3] = {{0,0},{0,0},{0,0}};
+        Point3D world_coords[3];
+        for (size_t j=0; j<3; j++) {
+            Point3D v = m.getVertex(face[j]-1);
+            screen_coords[j] = Vec2i((v.x+1.)*width/2., (v.y+1.)*height/2.);
+            world_coords[j]  = v;
+        }
+        Point3D n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
+        n.normalize();
+        float intensity = n*light_dir;
+        if (intensity>0) {
+            triangle(screen_coords[0], screen_coords[1], screen_coords[2], image, TGAColor(intensity*255, intensity*255, intensity*255, 255));
+        }
     }
-
     image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
 	image.write_tga_file("output.tga");
 	return 0;
