@@ -29,6 +29,10 @@ template <typename T>
 struct Vec3
 {
     T x, y, z;
+    Vec3() : x(T()), y(T()), z(T()) {}
+    Vec3(T x, T y, T z) : x(x), y(y), z(z) {}
+    Vec3(Vec3 const &v) : x(v.x), y(v.y), z(v.z) {}
+    template <class U> Vec3<T>(const Vec3<U> &v);
     Vec3 operator ^(Vec3 other) {
         T _x = y * other.z - z * other.y;
         T _y = - x * other.z + z * other.x;
@@ -38,19 +42,26 @@ struct Vec3
     Vec3 operator -(Vec3 other) {
         return {x - other.x, y - other.y, z - other.z};
     }
+    Vec3 operator +(Vec3 other) {
+        return {x + other.x, y + other.y, z + other.z};
+    }
     void normalize() {
         T l = sqrt(x*x + y*y + z*z);
         x /= l;
         y /= l;
         z /= l;
     }
-    float operator *(Vec3 other) {
+    T operator *(Vec3 other) {
         return x * other.x + y * other.y + z * other.z;
+    }
+    Vec3 operator *(float scale) {
+        return {x*scale, y*scale, z*scale};
     }
 };
 
 typedef Vec3<float> Vec3f;
 typedef Vec3<int>   Vec3i;
-
+template <> template <> Vec3<int>::Vec3(const Vec3<float> &v);
+template <> template <> Vec3<float>::Vec3(const Vec3<int> &v);
 
 #endif // GEOMETRY_H

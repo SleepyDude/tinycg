@@ -59,7 +59,7 @@ void line(Vec2i v1, Vec2i v2, TGAImage &image, TGAColor color) {
     line(x0, y0, x1, y1, image, color);
 }
 
-void triangle(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color) {
+void triangle(Vec3i t0, Vec3i t1, Vec3i t2, TGAImage &image, TGAColor color, int *zbuffer) {
     if (t0.y==t1.y && t0.y==t2.y) return;
     if (t0.y > t1.y) std::swap(t0, t1);
     if (t1.y > t2.y) std::swap(t1, t2);
@@ -73,13 +73,21 @@ void triangle(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color) {
         float alpha = static_cast<float>(i)/l02;
         float beta = second_half ? static_cast<float>(i - l01)/l12
                                  : static_cast<float>(i)/l01;
-        Vec2i A = t0 + (t2 - t0) * alpha;
-        Vec2i B = second_half ? t1 + (t2 - t1) * beta
+        Vec3i A = t0 + Vec3f(t2 - t0) * alpha;
+        Vec3i B = second_half ? t1 + Vec3f(t2 - t1) * beta
                               : t0 + (t1 - t0) * beta;
 
         if (A.x > B.x) std::swap(A, B);
         for (int j = A.x; j <= B.x; j++ ) {
-            image.set(j, t0.y + i, color);
+            Vec3i C;
+            if (A.x != B.x)
+                C = Vec3f(B - A) * (( j - A.x ) / (float)(B.x - A.x));
+            Vec3i D = C + A;
+            int index = j + image.get_width() * (i + t0.y);
+            if (zbuffer[index] < D.z) {
+                zbuffer[index] = D.z;
+                image.set(j, t0.y + i, color);
+            }
         }
     }
 }
@@ -90,21 +98,25 @@ int main(int argc, char** argv) {
     TGAImage image(width, height, TGAImage::RGB);
     Model m;
     m.readModel("../african_head.obj");
+    int zbuffer[width*height];
+    for (int i=0; i<width*height; i++) {
+        zbuffer[i] = std::numeric_limits<int>::min();
+    }
     Vec3f light_dir = {0, 0, -1};
     for (size_t i=0; i < m.sizeFace(); i++) {
         Face face = m.face(i);
-        Vec2i screen_coords[3];
+        Vec3i screen_coords[3];
         Vec3f world_coords[3];
         for (size_t j=0; j<3; j++) {
             Vec3f v = m.getVertex(face[j]-1);
-            screen_coords[j] = Vec2i((v.x+1.)*width/2., (v.y+1.)*height/2.);
+            screen_coords[j] = Vec3i((v.x+1.)*width/2., (v.y+1.)*height/2., (v.z+1.));
             world_coords[j]  = v;
         }
         Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
         n.normalize();
         float intensity = n*light_dir;
         if (intensity>0) {
-            triangle(screen_coords[0], screen_coords[1], screen_coords[2], image, TGAColor(intensity*255, intensity*255, intensity*255, 255));
+            triangle(screen_coords[0], screen_coords[1], screen_coords[2], image, TGAColor(intensity*255, intensity*255, intensity*255, 255), zbuffer);
         }
     }
 
@@ -134,7 +146,6 @@ int main(int argc, char** argv) {
 //    render.write_tga_file("buffer.tga");
 
 
-//    int zbuffer[width*height];
     image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
     image.write_tga_file("output.tga");
 	return 0;
