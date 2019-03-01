@@ -8,7 +8,8 @@
 
 size_t Model::sizeVert() { return m_vertexes.size(); }
 size_t Model::sizeFace() { return m_faces.size(); }
-Vec3f Model::getVertex(size_t num) { return m_vertexes[num]; }
+Vec3f Model::getVertex(size_t num) { return m_vertexes[num - 1]; }
+Vec2f Model::getTexVert(size_t num) { return m_textures[num - 1]; }
 
 std::vector<std::string> split(const std::string& s, char delimiter)
 {
@@ -26,7 +27,7 @@ std::vector<std::string> split(const std::string& s, char delimiter)
 void Model::readModel(std::string filename) {
     std::ifstream readFile(filename);
     if (readFile.fail())
-        throw std::runtime_error("Could not open file");
+        throw std::runtime_error("Could not open the file");
 
     for (std::string line; std::getline(readFile, line);) {
         std::vector<std::string> results = ::split(line, ' ');
@@ -40,10 +41,18 @@ void Model::readModel(std::string filename) {
             std::vector<std::string> f1 = ::split(results[1], '/');
             std::vector<std::string> f2 = ::split(results[2], '/');
             std::vector<std::string> f3 = ::split(results[3], '/');
-            Face f = {std::stoi(f1[0]),
-                      std::stoi(f2[0]),
-                      std::stoi(f3[0])};
+            Face f = {{std::stoi(f1[0]),
+                       std::stoi(f2[0]),
+                       std::stoi(f3[0])},
+                      {std::stoi(f1[1]),
+                       std::stoi(f2[1]),
+                       std::stoi(f3[1])}};
             m_faces.push_back(f);
+        }
+        if (results.size() && results[0] == "vt") {
+            Vec2f p = {std::stof(results[2]),
+                       std::stof(results[3])};
+            m_textures.push_back(p);
         }
     }
 }

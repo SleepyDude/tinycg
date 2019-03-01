@@ -59,11 +59,13 @@ void line(Vec2i v1, Vec2i v2, TGAImage &image, TGAColor color) {
     line(x0, y0, x1, y1, image, color);
 }
 
-void triangle(Vec3i t0, Vec3i t1, Vec3i t2, TGAImage &image, TGAColor color, int *zbuffer) {
+void triangle(Vec3i t0, Vec3i t1, Vec3i t2,
+              Vec2i d0, Vec2i d1, Vec2i d2,
+              TGAImage &image, TGAImage &texture, float intense, int *zbuffer) {
     if (t0.y==t1.y && t0.y==t2.y) return;
-    if (t0.y > t1.y) std::swap(t0, t1);
-    if (t1.y > t2.y) std::swap(t1, t2);
-    if (t0.y > t1.y) std::swap(t0, t1);
+    if (t0.y > t1.y) { std::swap(t0, t1); std::swap(d0, d1); }
+    if (t1.y > t2.y) { std::swap(t1, t2); std::swap(d1, d2); }
+    if (t0.y > t1.y) { std::swap(t0, t1); std::swap(d0, d1); }
     int l02 = t2.y - t0.y;
     int l01 = t1.y - t0.y;
     int l12 = t2.y - t1.y;
@@ -75,17 +77,29 @@ void triangle(Vec3i t0, Vec3i t1, Vec3i t2, TGAImage &image, TGAColor color, int
                                  : static_cast<float>(i)/l01;
         Vec3i A = t0 + Vec3f(t2 - t0) * alpha;
         Vec3i B = second_half ? t1 + Vec3f(t2 - t1) * beta
-                              : t0 + (t1 - t0) * beta;
+                              : t0 + Vec3f(t1 - t0) * beta;
+        Vec2i texA = d0 + (d2 - d0) * alpha;
+        Vec2i texB = second_half ? d1 + (d2 - d1) * beta
+                              : d0 + (d1 - d0) * beta;
 
-        if (A.x > B.x) std::swap(A, B);
+        if (A.x > B.x) {
+            std::swap(A, B);
+            std::swap(texA, texB);
+        }
         for (int j = A.x; j <= B.x; j++ ) {
             Vec3i C;
-            if (A.x != B.x)
+            Vec2i texC;
+            if (A.x != B.x) {
                 C = Vec3f(B - A) * (( j - A.x ) / (float)(B.x - A.x));
+                texC = (texB - texA) * (( j - A.x ) / (float)(B.x - A.x));
+            }
             Vec3i D = C + A;
+            Vec2i texD = texC + texA;
             int index = j + image.get_width() * (i + t0.y);
             if (zbuffer[index] < D.z) {
                 zbuffer[index] = D.z;
+                TGAColor c = texture.get(texD.x, texD.y);
+                TGAColor color(c.r * intense, c.g * intense, c.b * intense, 255);
                 image.set(j, t0.y + i, color);
             }
         }
@@ -96,6 +110,9 @@ int main(int argc, char** argv) {
     int width  = 900;
     int height = 900;
     TGAImage image(width, height, TGAImage::RGB);
+    TGAImage texture = {};
+    texture.read_tga_file("../african_head_diffuse.tga");
+    texture.flip_vertically();
     Model m;
     m.readModel("../african_head.obj");
     int zbuffer[width*height];
@@ -107,16 +124,21 @@ int main(int argc, char** argv) {
         Face face = m.face(i);
         Vec3i screen_coords[3];
         Vec3f world_coords[3];
+        Vec2i texture_coords[3];
         for (size_t j=0; j<3; j++) {
-            Vec3f v = m.getVertex(face[j]-1);
+            Vec3f v = m.getVertex(face.v[j]);
+            Vec2f t = m.getTexVert(face.t[j]);
             screen_coords[j] = Vec3i((v.x+1.)*width/2., (v.y+1.)*height/2., (v.z+1.));
+            texture_coords[j] = Vec2i(t.x * texture.get_width(), t.y * texture.get_height());
             world_coords[j]  = v;
         }
         Vec3f n = (world_coords[2]-world_coords[0])^(world_coords[1]-world_coords[0]);
         n.normalize();
         float intensity = n*light_dir;
         if (intensity>0) {
-            triangle(screen_coords[0], screen_coords[1], screen_coords[2], image, TGAColor(intensity*255, intensity*255, intensity*255, 255), zbuffer);
+            triangle(screen_coords[0],  screen_coords[1],  screen_coords[2],
+                     texture_coords[0], texture_coords[1], texture_coords[2],
+                     image, texture, intensity, zbuffer);
         }
     }
 
